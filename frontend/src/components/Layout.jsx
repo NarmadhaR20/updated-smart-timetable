@@ -4,7 +4,13 @@ import { LogOut } from 'lucide-react';
 
 export default function Layout({ children, title }) {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user')) || { username: 'Guest', role: 'Visitor' };
+    let user = { username: 'Guest', role: 'Visitor' };
+    try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) user = JSON.parse(storedUser);
+    } catch (e) {
+        console.error("Failed to parse user from local storage", e);
+    }
 
     const handleLogout = () => {
         if (window.confirm("Are you sure you want to logout?")) {

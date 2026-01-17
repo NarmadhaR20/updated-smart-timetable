@@ -1,6 +1,6 @@
 import { Edit, Trash2, RefreshCw } from 'lucide-react';
 
-export function DataTable({ headers, data, onEdit, onDelete }) {
+export function DataTable({ headers, data, onEdit, onDelete, showActions = true }) {
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
             <table className="w-full">
@@ -9,7 +9,7 @@ export function DataTable({ headers, data, onEdit, onDelete }) {
                         {headers.map((h, i) => (
                             <th key={i} className="p-3 text-left text-sm font-semibold first:rounded-tl-lg last:rounded-tr-lg">{h}</th>
                         ))}
-                        <th className="p-3">Actions</th>
+                        {showActions && <th className="p-3">Actions</th>}
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -19,14 +19,16 @@ export function DataTable({ headers, data, onEdit, onDelete }) {
                                 const key = h.toLowerCase().replace(/ /g, '_').replace('.', '');
                                 return <td key={i} className="p-3 text-sm text-gray-700">{row[key] || row[Object.keys(row)[i]]}</td>
                             })}
-                            <td className="p-3 flex gap-2 justify-center">
-                                <button onClick={() => onEdit(row)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"><Edit size={16} /></button>
-                                <button onClick={() => onDelete(row)} className="p-1.5 text-red-600 hover:bg-red-100 rounded"><Trash2 size={16} /></button>
-                            </td>
+                            {showActions && (
+                                <td className="p-3 flex gap-2 justify-center">
+                                    <button onClick={() => onEdit(row)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"><Edit size={16} /></button>
+                                    <button onClick={() => onDelete(row)} className="p-1.5 text-red-600 hover:bg-red-100 rounded"><Trash2 size={16} /></button>
+                                </td>
+                            )}
                         </tr>
                     ))}
                     {data.length === 0 && (
-                        <tr><td colSpan={headers.length + 1} className="p-8 text-center text-gray-400">No records found</td></tr>
+                        <tr><td colSpan={headers.length + (showActions ? 1 : 0)} className="p-8 text-center text-gray-400">No records found</td></tr>
                     )}
                 </tbody>
             </table>

@@ -3,31 +3,34 @@ import { LayoutDashboard, Users, GraduationCap, MapPin, BookOpen, Settings, Cale
 
 export default function Sidebar() {
     const location = useLocation();
+    const user = JSON.parse(localStorage.getItem('user')) || { username: 'Guest', role: 'Visitor' };
 
     const menuItems = [
         { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-        { name: 'Departments', icon: BookOpen, path: '/departments' },
-        { name: 'Subjects', icon: GraduationCap, path: '/subjects' },
-        { name: 'Faculty', icon: Users, path: '/faculty' },
-        { name: 'Rooms', icon: MapPin, path: '/rooms' },
-        { name: 'Generate Timetable', icon: Settings, path: '/generate' },
-        { name: 'Timetables', icon: Calendar, path: '/timetables' },
+        { name: 'Departments', icon: BookOpen, path: '/departments', roles: ['admin', 'faculty'] },
+        { name: 'Faculty', icon: Users, path: '/faculty', roles: ['admin', 'faculty'] },
+        { name: 'Subjects', icon: GraduationCap, path: '/subjects', roles: ['admin', 'faculty'] },
+        { name: 'Rooms', icon: MapPin, path: '/rooms', roles: ['admin', 'faculty'] },
+        { name: 'Generate Timetable', icon: Settings, path: '/generate', roles: ['faculty'] },
+        { name: 'Timetables', icon: Calendar, path: '/timetables', roles: ['admin', 'faculty', 'student'] },
     ];
+
+    const filteredItems = menuItems.filter(item => !item.roles || item.roles.includes(user.role));
 
     return (
         <div className="w-64 bg-orodha-purple text-white flex flex-col h-screen fixed left-0 top-0 shadow-2xl z-10">
             {/* User Profile Section */}
             <div className="p-8 flex flex-col items-center border-b border-purple-500/30">
                 <div className="w-16 h-16 rounded-full bg-white text-orodha-purple flex items-center justify-center text-2xl font-bold mb-3 border-4 border-white/20">
-                    A
+                    {(user.name || user.username || 'A').charAt(0).toUpperCase()}
                 </div>
-                <h3 className="font-bold text-lg">Admin User</h3>
-                <p className="text-purple-200 text-sm">Administrator</p>
+                <h3 className="font-bold text-lg">{user.name || user.username}</h3>
+                <p className="text-purple-200 text-sm capitalize">{user.role}</p>
             </div>
 
             {/* Navigation */}
             <nav className="flex-1 py-6 space-y-2 px-4">
-                {menuItems.map((item) => {
+                {filteredItems.map((item) => {
                     const isActive = location.pathname === item.path;
                     return (
                         <Link

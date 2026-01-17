@@ -30,7 +30,7 @@ async def startup_db_client():
 async def root():
     return {"message": "Smart Timetable Generator API is Running"}
 
-from app.routes import admin, auth, generation
+from app.routes import admin, auth, generation, student
 
 # Auth Routes
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
@@ -40,3 +40,6 @@ app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 
 # Faculty/Generation Routes
 app.include_router(generation.router, prefix="/api/generation", tags=["Generation"])
+
+# Student Routes (Public)
+app.include_router(student.router, prefix="/api/student", tags=["Student"])

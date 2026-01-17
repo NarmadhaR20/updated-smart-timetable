@@ -42,6 +42,8 @@ class Subject(BaseModel):
     weekly_hours: int = Field(..., gt=0)
     department_code: str = Field(..., description="Link to Department")
     semester: int = Field(...)
+    year: int = Field(1, ge=1, le=4)
+    faculty_id: Optional[str] = None
 
     class Config:
         json_schema_extra = {
@@ -51,7 +53,9 @@ class Subject(BaseModel):
                 "type": "Theory",
                 "weekly_hours": 3,
                 "department_code": "CS",
-                "semester": 3
+                "semester": 3,
+                "year": 2,
+                "faculty_id": "60..."
             }
         }
 
@@ -60,7 +64,6 @@ class Faculty(BaseModel):
     email: EmailStr = Field(...)
     designation: str = Field(...)
     department_code: str = Field(...)
-    qualified_subjects: List[str] = Field(..., description="List of Subject Codes they can teach")
     max_load_per_week: int = Field(default=12)
 
     class Config:
@@ -84,7 +87,9 @@ class Room(BaseModel):
 # Timetable Generation Request (From Faculty Dashboard)
 class GenerateRequest(BaseModel):
     department_code: str
+    year: int
     semester: int
+    class_name: str # e.g. "A" or "B"
     subject_allocations: List[dict] # [{"subject_code": "CS101", "faculty_id": "..."}]
 
 # Timetable Result Structure
@@ -92,9 +97,11 @@ class TimetableSlot(BaseModel):
     day: str
     period: int # 1 to 9
     subject: str
+    subject_code: Optional[str] = None
     faculty: str
+    faculty_id: Optional[str] = None
     room: str
-    type: str
+    type: str # Theory or Lab
 
 class TimetableResponse(BaseModel):
     department: str

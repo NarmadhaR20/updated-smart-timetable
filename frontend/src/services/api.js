@@ -121,6 +121,11 @@ export const generateTimetable = async (data) => {
     return response.data;
 };
 
+export const saveTimetable = async (data) => {
+    const response = await api.post("/generation/save", data);
+    return response.data;
+};
+
 // --- Student: View ---
 export const getTimetable = async (params) => {
     const response = await api.get("/generation/timetable", { params });

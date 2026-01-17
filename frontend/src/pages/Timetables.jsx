@@ -1,22 +1,34 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import api from '../services/api';
+import * as api from '../services/api';
 
 export default function Timetables() {
     // This page is for Students to View the generated timetable
     const [departments, setDepartments] = useState([]);
-    const [search, setSearch] = useState({ department_code: '', semester: '' });
+    const [search, setSearch] = useState({ department_code: '', year: '', semester: '', class_name: '' });
     const [timetable, setTimetable] = useState(null);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
 
     useEffect(() => {
-        api.getDepartments().then(res => setDepartments(res || []));
+        // Use student endpoint for public access to departments
+        const fetchDepartments = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/student/departments');
+                const data = await response.json();
+                console.log('Departments loaded:', data);
+                setDepartments(data || []);
+            } catch (err) {
+                console.error('Error loading departments:', err);
+            }
+        };
+        fetchDepartments();
     }, []);
 
+
     const handleSearch = async () => {
-        if (!search.department_code || !search.semester) {
-            alert("Select Dept and Semester");
+        if (!search.department_code || !search.year || !search.semester || !search.class_name) {
+            alert("Please select Department, Year, Semester, and Class");
             return;
         }
         setLoading(true);
@@ -24,7 +36,9 @@ export default function Timetables() {
         try {
             const res = await api.getTimetable({
                 department_code: search.department_code,
-                semester: parseInt(search.semester)
+                year: parseInt(search.year),
+                semester: parseInt(search.semester),
+                class_name: search.class_name
             });
             setTimetable(res.schedule);
         } catch (err) {
@@ -36,36 +50,59 @@ export default function Timetables() {
     };
 
     return (
-        <Layout title="Student Timetable Viewer">
-            <div className="bg-white p-6 rounded shadow mb-6">
-                <div className="flex gap-4 items-end">
-                    <div className="flex-1">
-                        <label className="block text-sm font-bold mb-1">Department</label>
+        <Layout title="View Timetables">
+            <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 mb-6">
+                <h3 className="font-bold text-lg mb-4 text-orodha-purple">Search Timetable</h3>
+                <div className="grid grid-cols-5 gap-4 items-end">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Department</label>
                         <select
-                            className="w-full border p-2 rounded"
+                            className="w-full border-2 border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-orodha-purple outline-none transition"
                             value={search.department_code}
                             onChange={e => setSearch({ ...search, department_code: e.target.value })}
                         >
-                            <option value="">Select Department</option>
+                            <option value="">Select...</option>
                             {departments.map(d => <option key={d.id} value={d.code}>{d.name}</option>)}
                         </select>
                     </div>
-                    <div className="flex-1">
-                        <label className="block text-sm font-bold mb-1">Semester</label>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Year</label>
                         <select
-                            className="w-full border p-2 rounded"
+                            className="w-full border-2 border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-orodha-purple outline-none transition"
+                            value={search.year}
+                            onChange={e => setSearch({ ...search, year: e.target.value })}
+                        >
+                            <option value="">Select...</option>
+                            {[1, 2, 3, 4].map(y => <option key={y} value={y}>Year {y}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Semester</label>
+                        <select
+                            className="w-full border-2 border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-orodha-purple outline-none transition"
                             value={search.semester}
                             onChange={e => setSearch({ ...search, semester: e.target.value })}
                         >
-                            <option value="">Select Semester</option>
-                            {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>{s}</option>)}
+                            <option value="">Select...</option>
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Class</label>
+                        <select
+                            className="w-full border-2 border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-orodha-purple outline-none transition"
+                            value={search.class_name}
+                            onChange={e => setSearch({ ...search, class_name: e.target.value })}
+                        >
+                            <option value="">Select...</option>
+                            {['A', 'B'].map(c => <option key={c} value={c}>Class {c}</option>)}
                         </select>
                     </div>
                     <button
                         onClick={handleSearch}
-                        className="px-6 py-2 bg-orodha-blue text-white font-bold rounded shadow hover:bg-blue-700 h-10"
+                        className="px-6 py-3 bg-orodha-purple text-white font-black rounded-xl shadow-lg hover:bg-purple-700 transition active:scale-95 uppercase tracking-wider text-sm"
                     >
-                        FIND TIMETABLE
+                        🔍 Search
                     </button>
                 </div>
             </div>
@@ -79,30 +116,39 @@ export default function Timetables() {
             )}
 
             {!loading && timetable && timetable.length > 0 && (
-                <div className="bg-white p-6 rounded shadow overflow-x-auto">
-                    <h2 className="text-xl font-bold mb-4 text-center text-orodha-purple">
-                        {search.department_code} - Semester {search.semester}
-                    </h2>
-                    <table className="w-full border-collapse border border-gray-300">
+                <div className="bg-white p-8 rounded-2xl shadow-2xl border-t-8 border-orodha-pink overflow-x-auto">
+                    <div className="bg-gradient-to-r from-orodha-pink to-pink-500 text-white px-8 py-3 rounded-full font-black text-sm tracking-[0.1em] uppercase shadow-lg shadow-pink-100 mb-6 text-center inline-block">
+                        {search.department_code} • YEAR {search.year} • SEM {search.semester} • CLASS {search.class_name}
+                    </div>
+                    <table className="w-full table-fixed border-separate border-spacing-2">
                         <thead>
-                            <tr className="bg-gray-100">
-                                <th className="border p-2">Day / Time</th>
-                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(p => <th key={p} className="border p-2">Period {p}</th>)}
+                            <tr>
+                                <th className="w-24 bg-gray-50/50 p-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">DAY / PERIOD</th>
+                                {["9:00 AM - 9:50 AM", "9:50 AM - 10:40 AM", "INTERVAL", "10:50 AM - 11:40 AM", "11:40 AM - 12:30 PM", "LUNCH", "1:30 PM - 2:20 PM", "2:20 PM - 3:10 PM", "3:10 PM - 4:00 PM"].map((time, idx) => (
+                                    <th key={idx} className={`p-3 text-[10px] font-black text-gray-500 uppercase border-b-4 transition-all ${idx === 2 || idx === 5 ? 'bg-gray-50/30' : 'border-orodha-purple/20'}`}>
+                                        {time.split(' - ').map((t, i) => <div key={i} className={i === 0 ? "text-gray-800" : ""}>{t}</div>)}
+                                    </th>
+                                ))}
                             </tr>
                         </thead>
                         <tbody>
-                            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => (
-                                <tr key={day}>
-                                    <td className="font-bold border p-2 bg-gray-50">{day}</td>
-                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(period => {
+                            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                                <tr key={day} className="h-32">
+                                    <td className="bg-gray-50/50 border-r-4 border-orodha-purple p-3 text-center text-[12px] font-black text-orodha-purple uppercase tracking-tighter leading-none">{day.slice(0, 3)}</td>
+                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((timeIdx) => {
+                                        if (timeIdx === 2) return <td key={timeIdx} className="rounded-2xl border-2 border-gray-50 bg-gray-50/50 grayscale text-center"><div className="font-bold text-gray-400 rotate-90">INTERVAL</div></td>;
+                                        if (timeIdx === 5) return <td key={timeIdx} className="rounded-2xl border-2 border-gray-50 bg-gray-50/50 grayscale text-center"><div className="font-bold text-gray-400 rotate-90">LUNCH</div></td>;
+                                        let period = timeIdx + 1;
+                                        if (timeIdx > 2) period--;
+                                        if (timeIdx > 5) period--;
                                         const slot = timetable.find(s => s.day === day && s.period === period);
                                         return (
-                                            <td key={period} className="border p-2 text-center text-sm">
+                                            <td key={timeIdx} className="rounded-2xl border-2 border-gray-50 overflow-hidden text-center transition-all duration-300 hover:border-orodha-purple/30 hover:shadow-lg hover:shadow-gray-100">
                                                 {slot ? (
-                                                    <div className={`p-1 rounded ${slot.type === 'Lab' ? 'bg-orange-100 border-orange-200' : 'bg-blue-50 border-blue-100'} border`}>
-                                                        <div className="font-bold text-gray-800">{slot.subject}</div>
-                                                        <div className="text-xs text-gray-600">{slot.faculty}</div>
-                                                        <div className="text-xs text-gray-500">{slot.room}</div>
+                                                    <div className="flex flex-col gap-1 p-2">
+                                                        <div className="bg-orange-400 text-white text-[10px] font-bold py-0.5 px-1 rounded uppercase tracking-tighter truncate">{slot.faculty}</div>
+                                                        <div className="text-[11px] font-bold text-gray-800 leading-tight">{slot.subject}</div>
+                                                        <div className="bg-blue-500 text-white text-[9px] py-0.5 px-1 rounded truncate">{slot.room}</div>
                                                     </div>
                                                 ) : <span className="text-gray-300">-</span>}
                                             </td>
