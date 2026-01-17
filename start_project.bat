@@ -1,0 +1,13 @@
+@echo off
+echo Starting Smart Timetable Project...
+
+echo Starting Backend Server...
+start "SmartTimetable Backend" cmd /k "cd backend && pip install -r requirements.txt && python -m uvicorn app.main:app --reload --port 8000"
+
+echo Starting Frontend Server...
+start "SmartTimetable Frontend" cmd /k "cd frontend && npm install && npm run dev"
+
+echo Servers are launching...
+echo Backend will be at: http://localhost:8000
+echo Frontend will be at: http://localhost:5173
+pause
