@@ -27,6 +27,18 @@ def process_substitutions(schedule: List[Any]):
                 pass
     return schedule
 
+def get_target_date(day_name):
+    days_map = {day: i for i, day in enumerate(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])}
+    now = datetime.now(timezone.utc)
+    current_day_idx = now.weekday() # 0 is Monday
+    target_day_idx = days_map.get(day_name, 0)
+    
+    days_ahead = target_day_idx - current_day_idx
+    if days_ahead < 0: 
+        days_ahead += 7
+    
+    return now + timedelta(days=days_ahead)
+
 @router.post("/generate", response_model=TimetableResponse)
 async def generate_timetable(request: GenerateRequest = Body(...)):
     # 1. Fetch related data
@@ -446,14 +458,29 @@ async def get_timetable(department_code: str, semester: int, year: Optional[int]
     if class_name: query["class_name"] = class_name
     doc = await database.timetables.find_one(query)
     if not doc: return TimetableResponse(department=department_code, semester=semester, schedule=[])
-    return TimetableResponse(department=department_code, semester=semester, schedule=[TimetableSlot(**s) for s in doc.get("schedule", [])])
+    
+    schedule = doc.get("schedule", [])
+    active_schedule = process_substitutions(schedule)
+    return TimetableResponse(department=department_code, semester=semester, schedule=[TimetableSlot(**s) for s in active_schedule])
 
 @router.get("/all")
 async def get_all_timetables(department_code: Optional[str] = None):
     query = {"department_code": department_code} if department_code else {}
     cursor = database.timetables.find(query)
     all_tts = await cursor.to_list(length=500)
-    return [{"department_code": t['department_code'], "year": t['year'], "semester": t['semester'], "class_name": t['class_name'], "schedule": t['schedule'], "id": str(t['_id'])} for t in all_tts]
+    
+    results = []
+    for t in all_tts:
+        t['schedule'] = process_substitutions(t.get('schedule', []))
+        results.append({
+            "department_code": t['department_code'], 
+            "year": t['year'], 
+            "semester": t['semester'], 
+            "class_name": t['class_name'], 
+            "schedule": t['schedule'], 
+            "id": str(t['_id'])
+        })
+    return results
 
 @router.get("/faculty_timetable")
 async def get_faculty_timetable(faculty_id: str, semester_type: str = "ODD"):
@@ -498,9 +525,11 @@ async def customize_slot(request: CustomizeSlotRequest = Body(...)):
     # 3. Update the specific slot
     new_schedule = tt.get("schedule", [])
     found = False
-    now = datetime.now(timezone.utc)
-    # Set expiry to the end of the day (23:59:59) for the specified number of days
-    valid_until = (now + timedelta(days=request.number_of_days - 1)).replace(hour=23, minute=59, second=59, microsecond=0)
+    
+    # RELATIVE EXPIRY: Find the date of the next occurrence of the Day we are editing
+    base_date = get_target_date(request.day)
+    # Set expiry to the end of that day (plus any extra days requested)
+    valid_until = (base_date + timedelta(days=request.number_of_days - 1)).replace(hour=23, minute=59, second=59, microsecond=0)
     
     for slot in new_schedule:
         if slot["day"] == request.day and slot["period"] == request.period:
