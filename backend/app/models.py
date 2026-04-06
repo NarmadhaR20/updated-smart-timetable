@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
-from typing import List, Optional
+from typing import List, Optional, Any
 
 # --- Authentication ---
 class UserSchema(BaseModel):
@@ -41,7 +41,7 @@ class Subject(BaseModel):
     name: str = Field(..., description="e.g. Data Structures")
     code: str = Field(..., description="e.g. CS201")
     type: str = Field(..., description="Theory, Lab, Open Elective, Project Work, or Skill Development")
-    weekly_hours: int = Field(..., gt=0)
+    weekly_hours: Any = Field(..., description="Value can be int (7) or string (5+2)")
     department_code: str = Field(..., description="Link to Department")
     semester: int = Field(...)
     year: int = Field(1, ge=1, le=4)
@@ -119,4 +119,13 @@ class TimetableResponse(BaseModel):
     department: str
     semester: int
     schedule: List[TimetableSlot]
+
+class CustomizeSlotRequest(BaseModel):
+    department_code: str
+    year: int
+    class_name: str
+    day: str
+    period: int
+    new_faculty_id: str
+    number_of_days: int
 

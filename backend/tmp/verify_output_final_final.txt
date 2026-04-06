@@ -1,0 +1,22 @@
+﻿Total slots generated: 42 / 42
+
+DBMS Lab Check (4 slots):
+ - Saturday: Periods [1, 2, 3, 4] (Contiguous: True)
+
+Hours Check:
+ - Database Management Systems Laboratory: 4 hours
+ - Mentor: 1 hours
+ - Salesforce: 3 hours
+ - Career Skill Development III: 1 hours
+ - Library Hour: 1 hours
+ - NPTEL Hour: 1 hours
+ - Discrete Mathematics: 4 hours
+ - Discrete Mathematics (TUT): 5 hours
+ - Design and Analysis of Algorithms: 5 hours
+ - Computer Organization and Architecture: 4 hours
+ - Database Management Systems: 5 hours
+ - Web Technology: 4 hours
+ - Web Technology (TUT): 4 hours
+
+Blank Slots:
+Found 0 blank slots: []

@@ -5,6 +5,7 @@ from app.database import database
 from app.models import TimetableResponse
 from app.bulk_algorithm import generate_bulk_timetable_logic
 from bson import ObjectId
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -102,7 +103,27 @@ async def get_faculty_timetable(faculty_id: str, semester_type: Optional[str] = 
     
     for tt in all_tts:
         class_label = f"Year {tt.get('year')} {tt.get('class_name')} Sec"
-        for slot in tt.get('schedule', []):
+        
+        # Sync with generation.py substitution logic
+        raw_schedule = tt.get('schedule', [])
+        current_time = datetime.now(timezone.utc)
+        processed_schedule = []
+        for slot in raw_schedule:
+            s_copy = dict(slot)
+            valid_until_str = s_copy.get('substitute_valid_until')
+            if valid_until_str:
+                try:
+                    valid_until = datetime.fromisoformat(valid_until_str.replace('Z', '+00:00'))
+                    if valid_until > current_time:
+                        if s_copy.get('substitute_faculty'):
+                            s_copy['faculty'] = s_copy['substitute_faculty']
+                        if s_copy.get('substitute_faculty_ids'):
+                            s_copy['faculty_ids'] = s_copy['substitute_faculty_ids']
+                except:
+                    pass
+            processed_schedule.append(s_copy)
+
+        for slot in processed_schedule:
             if faculty_id in slot.get('faculty_ids', []):
                 faculty_schedule.append({
                     "day": slot.get("day"),
